@@ -1,40 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# 🎯 my-test-app
 
-## Getting Started
+내부 관리자 앱에서 사용된 특정 기능만 추출하여 정리한 React 기반 미니 앱입니다.  
+지급 조건을 설정하고 파일로 저장하거나 불러올 수 있는 기능을 포함합니다.
 
-First, run the development server:
+## 🛠 주요 기능
+
+- 조건(금액 + 사은품 항목들)을 동적으로 추가/삭제
+- 조건 데이터를 `.cnf` 파일로 인코딩하여 다운로드
+- 저장된 `.cnf` 파일을 다시 불러와 로컬 상태에 반영
+- 데이터는 base64 인코딩된 JSON 문자열로 구성
+
+## 💡 사용 기술
+
+- React + TypeScript
+- Chakra UI (토스트, 스타일링)
+- 브라우저 API (`Blob`, `FileReader`, `Buffer`)
+- `useCallback`, `useState` 등 React Hooks 활용
+
+## 📦 실행 방법
 
 ```bash
+git clone https://github.com/Dodam09/my-test-app.git
+cd my-test-app
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧩 파일 포맷 설명
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+`.cnf` 파일은 인코딩된 JSON 구조입니다.  
+조건과 사은품 정보가 아래와 같은 형식으로 저장됩니다:
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+```json
+[
+  {
+    "condition": 50000,
+    "gifts": [
+      {
+        "giftName": "에코백",
+        "giftSku": "SKU999",
+        "giftQty": 2
+      }
+    ]
+  }
+]
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## ✅ 유효성 검사 로직
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- 확장자가 `.cnf`인지 확인
+- base64 → JSON 디코딩 및 파싱
+- 필드 누락 여부, 숫자 타입 체크
+- 문제가 있을 경우 Chakra UI 토스트로 에러 알림
 
-## Learn More
+## ✍️ 개발 포인트
 
-To learn more about Next.js, take a look at the following resources:
+- 기존 내부 관리자 시스템의 일부 기능만 모듈화
+- 인코딩/디코딩, 파일 핸들링 로직 직접 설계
+- 재사용 가능한 상태 관리 및 최적화 고려 (`useCallback`)
+- 웹 브라우저 환경에서 파일 다운로드/업로드 구현 경험
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+> ⚠️ 본 프로젝트는 실제 운영 중인 내부 시스템의 일부 기능을 참고하여 별도로 재구성한 학습/포트폴리오용 앱입니다.
