@@ -26,15 +26,23 @@ import {
   useState,
 } from "react";
 import { AiOutlineFileAdd } from "react-icons/ai";
-
+// 사은품 지급 조건을 설정하고 엑셀 파일을 변환하는 컴포넌트
 const Convert = () => {
+  // i18n 번역 설정
   const { t } = useTranslation("convert");
-  const [file, setFile] = useState<any>(null);
+  // 엑셀 파일 업로드 및 변환 관련 상태 관리
+  const [file, setFile] = useState<File | null>(null);
+  // 로딩 상태 및 스켈레톤 로딩 상태 관리
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  // 스켈레톤 로딩 상태 관리
   const [isLoadedSkeleton, setIsLoadedSkeleton] = useState<boolean>(true);
+  // 채널, 브랜드, 상품 코드 및 묶음 체크 상태 관리
   const [channel, setChannel] = useState<string>("");
+  // 브랜드 선택 상태 관리
   const [brand, setBrand] = useState<string>("");
+  // 토스트 메시지 표시를 위한 useToast 훅 사용
   const toast = useToast();
+
   const [productCode, setProductCode] = useState<string>("");
   const [bundleChk, setBundleChk] = useState<boolean>(false);
   const [fields, setFields] = useState<Field[]>([]);
@@ -65,7 +73,6 @@ const Convert = () => {
           setIsLoading={setIsLoading}
           setIsLoadedSkeleton={setIsLoadedSkeleton}
         />
-
         <Box
           className={css`
             display: flex;
@@ -88,10 +95,11 @@ const Convert = () => {
             setBundleChk={setBundleChk}
           />
         </Box>
-      </Box>{" "}
+      </Box>
     </Layout>
   );
 };
+//채널 선택, 쇼핑몰 선택, 파일 업로드 및 변환 버튼을 포함하여 엑셀 파일 변환을 위한 UI를 제공
 const ConvertSelectComponent = ({
   t,
   file,
@@ -124,7 +132,7 @@ const ConvertSelectComponent = ({
   fields: Field[];
   setFields: Dispatch<SetStateAction<Field[]>>;
 }) => {
-  // 채널 선택
+  // 채널 선택 : 고도몰 선택시 브랜드 초기화
   const onChangeChannel = useCallback(
     (channel: string) => {
       if (channel !== "godomall") {
@@ -150,6 +158,7 @@ const ConvertSelectComponent = ({
 
       fileReader.onload = () => {
         resolve(
+          //"data:application/pdf;base64" 부분을 제외하고 base64 문자열만 반환
           fileReader?.result.slice(fileReader?.result.lastIndexOf(",") + 1)
         );
       };
@@ -159,10 +168,11 @@ const ConvertSelectComponent = ({
       fileReader.readAsDataURL(file);
     });
   }, []);
-
+  // 변환 된 엑셀 파일 다운로드
   const onClickExcelDownload = useCallback(async () => {
     const storedFields = localStorage.getItem("fields");
 
+    // 로컬스토리지에 필드 정보가 없다면
     if (!storedFields) {
       toast({
         title: "필드 오류",
@@ -173,7 +183,8 @@ const ConvertSelectComponent = ({
       });
       return;
     }
-
+    // 정규화
+    // 입력한 값과 로컬스토리지의 값과 비교해서 저장하지 않고 다운로드 했을 때 저장 요구
     if (JSON.stringify(JSON.parse(storedFields)) !== JSON.stringify(fields)) {
       toast({
         title: "필드 오류",
@@ -184,8 +195,9 @@ const ConvertSelectComponent = ({
       });
       return;
     }
-
+    // 로컬스토리지 대이터 객체로 변환
     const parsedFields = JSON.parse(storedFields);
+    // 필드 유효성 검사
     const isFieldsValid = (fields: Field[]): boolean => {
       return fields.every(
         (field) =>
@@ -221,7 +233,7 @@ const ConvertSelectComponent = ({
 
     if (channel === "") {
       toast({
-        title: `${t("channel_error_title")}`,
+        title: `${t("채널을 선택해주세요")}`,
         description: `${t("channel_error_description")}`,
         status: "error",
         duration: 3000,
@@ -232,7 +244,7 @@ const ConvertSelectComponent = ({
 
     if (file === null) {
       toast({
-        title: `${t("file_error_title")}`,
+        title: `${t("파일을 선택해주세요")}`,
         description: `${t("file_error_description")}`,
         status: "error",
         duration: 3000,
@@ -246,6 +258,7 @@ const ConvertSelectComponent = ({
       setIsLoadedSkeleton(false);
       const base64 = await fileToBase64(file);
 
+      //서버 요청
       const response = await axios({
         url: "/api/convertGift",
         method: "post",
@@ -271,12 +284,8 @@ const ConvertSelectComponent = ({
 
       const responseData = response.data.file;
       const linksource = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${responseData}`;
-      // const linksource = `${responseData}`;
-      // const base64decode = Buffer.from(linksource, 'base64').toString('utf-8');
-      // const jsonCode = JSON.parse(base64decode);
 
       const tempLink = document.createElement("a");
-      // const filename = 'b_to_c_' + brand + '_' + dateString + '.xlsx';
       let filename = "";
       if (brand == "" || !brand) {
         filename = channel + "_" + dateString + ".xlsx";
@@ -303,8 +312,6 @@ const ConvertSelectComponent = ({
       return;
     } catch (error: any) {
       toast({
-        // title: error.code,
-        // description: error.message,
         title: error.response.data.msg,
         description: error.message,
         status: "error",
@@ -514,7 +521,7 @@ const ConvertSelectComponent = ({
     </Box>
   );
 };
-
+// 파일 업로드 및 변환 컴포넌트
 const ConvertFileComponent = ({
   file,
   setFile,
@@ -551,17 +558,21 @@ const ConvertFileComponent = ({
 
   const onDropFileEvent = useCallback(
     (e: any) => {
+      // 기본 동작 차단
       e.preventDefault();
-      fileDropElement.current.classList.remove("dragover");
 
+      fileDropElement.current.classList.remove("dragover");
+      // 파일 드롭 & 선택
       const files = e.target.files || e.dataTransfer.files;
-      const sizeLimit = 1024 ** 2 * 12; // 12mb
+      // 파일 크기 제한 설정 (12MB)
+      const sizeLimit = 1024 ** 2 * 12;
 
       try {
+        // 파일을 반드시 1개만 선택하도록 제한
         if (files.length !== 1) {
           toast({
-            title: `${t("file_error_title")}`,
-            description: `${t("only_1_file_can_be_selected")}`,
+            title: `${t("파일 에러")}`,
+            description: `${t("반드시 한개의 파일만 선택해주세요")}`,
             status: "error",
             duration: 3000,
             isClosable: true,
@@ -569,10 +580,11 @@ const ConvertFileComponent = ({
           setFile(null);
           return;
         }
+        // 파일 사이즈 제한
         if (sizeLimit < files[0].size) {
           toast({
-            title: `${t("file_size_error_title")}`,
-            description: `${t("file_size_error_description")}`,
+            title: `${t("파일 사이즈 에러")}`,
+            description: `${t("파일 사이즈는 12MB를 초과할 수 없습니다")}`,
             status: "error",
             duratin: 3000,
             isClosable: true,
@@ -672,13 +684,16 @@ const ConvertFileComponent = ({
     </Skeleton>
   );
 };
-
+// 사은품 지급 조건 및 사은품 정보 인터페이스
 interface Gift {
+  //사은품 이름
   giftName: string;
+  // 사은품 SKU 코드(사은품 재고 관리 코드)
   giftSkuCode: string;
+  // 사은품 수량
   giftQty: number | null;
 }
-
+// 사은품 지급 조건 필드 인터페이스
 interface Field {
   condition: string;
   gifts: Gift[];
@@ -701,11 +716,15 @@ const Gift = ({
 }) => {
   const toast = useToast();
 
+  // useEffect 훅을 사용하여 컴포넌트가 마운트될 때 로컬스토리지에서 필드 정보를 가져오고 상태를 초기화합니다.
   useEffect(() => {
+    // 로컬스토리지에서 필드 정보 가져오기
     const storedFields = localStorage.getItem("fields");
+    // 로컬스토리지에 필드 정보가 있다면 해당 데이터를 파싱하여 fields 상태에 저장
     if (storedFields) {
       setFields(JSON.parse(storedFields));
     } else {
+      // 로컬스토리지에 필드 정보가 없다면 기본 필드 설정
       setFields([
         {
           condition: "",
@@ -714,15 +733,18 @@ const Gift = ({
       ]);
     }
   }, [setFields]);
-
+  // 새로 추가된 필드나 사은품 정보를 로컬스토리지에 저장
   const saveToLocalStorage = (updatedFields: Field[]) => {
     localStorage.setItem("fields", JSON.stringify(updatedFields));
   };
-
+  // 사은품 지급 조건 필드 추가
   const addField = () => {
     setFields((prevFields) => {
+      // 새 필드를 추가할 때 기존 필드들을 유지하면서 새로운 필드를 추가
       const updatedFields = [
+        // 기존 fields를 복사
         ...prevFields,
+        // 새로운 필드 추가
         {
           condition: "",
           gifts: [{ giftName: "", giftSkuCode: "", giftQty: null }],
@@ -731,10 +753,12 @@ const Gift = ({
       return updatedFields;
     });
   };
-
+  // 사은품 추가
   const addGift = (fieldIndex: number) => {
+    // setFields()안의 콜백 함수에서 이전 상태를 받아와서 새로운 상태를 반환
     setFields((prevFields) => {
       const updatedFields = prevFields.map((field, i) =>
+        // 추가 된 인덱스가 현재 인덱스와 같을 때만 gifts 배열에 새로운 사은품 객체를 추가
         i === fieldIndex
           ? {
               ...field,
@@ -743,12 +767,13 @@ const Gift = ({
                 { giftName: "", giftSkuCode: "", giftQty: null },
               ],
             }
-          : field
+          : // 일치하지 않는 경우 기존 필드를 그대로 반환
+            field
       );
       return updatedFields;
     });
   };
-
+  // 사은품 삭제
   const deleteGift = (fieldIndex: number, giftIndex: number) => {
     setFields((prevFields) => {
       const updatedFields = prevFields.map((field, i) =>
@@ -765,7 +790,7 @@ const Gift = ({
       return updatedFields;
     });
   };
-
+  // 필드 삭제
   const deleteField = (fieldIndex: number) => {
     setFields((prevFields) =>
       prevFields.length !== 1
@@ -773,7 +798,7 @@ const Gift = ({
         : prevFields
     );
   };
-
+  // 필드 조건 변경
   const handleConditionChange = (index: number, value: string) => {
     setFields((prevFields) => {
       const updatedFields = prevFields.map((field, i) =>
@@ -782,7 +807,7 @@ const Gift = ({
       return updatedFields;
     });
   };
-
+  // 사은품 조건 변경
   const handleGiftChange = (
     fieldIndex: number,
     giftIndex: number,
@@ -800,7 +825,7 @@ const Gift = ({
                     ? {
                         ...gift,
 
-                        [key]: value === "" ? 0 : parseInt(value, 10),
+                        [key]: value === "" ? null : parseInt(value, 10),
                       }
                     : gift
                 ),
@@ -824,7 +849,7 @@ const Gift = ({
       );
     }
   };
-
+  // 공백 제거
   const trimmedFields = fields.map((field) => ({
     ...field,
     condition: field.condition ? field.condition.trim() : "",
@@ -835,52 +860,30 @@ const Gift = ({
       giftQty: gift.giftQty,
     })),
   }));
-
-  const handleSave = async () => {
-    saveToLocalStorage(trimmedFields);
-
-    const isFieldsValid = (fields: Field[]): boolean => {
-      return fields.every(
-        (field) =>
-          field.condition.trim() !== "" &&
-          field.gifts.every(
-            (gift) =>
-              gift.giftName.trim() !== "" &&
-              gift.giftSkuCode.trim() !== "" &&
-              gift.giftQty !== null
-          )
-      );
-    };
-
-    if (!validateFields(trimmedFields)) {
-      return;
+  // 필드 저장 클릭 시 유효 검증 완료 후 저장
+  const handleSave = () => {
+    if (!validateAllFields(trimmedFields)) {
+      return; // 유효성 실패 → 저장하지 않음
     }
 
-    if (!isFieldsValid(fields)) {
-      toast({
-        title: "필드 오류",
-        description: "모든 필드를 작성해주세요",
-        status: "error",
-        duration: 3000,
-        isClosable: false,
-      });
-    } else {
-      toast({
-        title: "저장 완료",
-        description: "저장되었습니다.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+    saveToLocalStorage(trimmedFields); // 유효성 통과 → 저장
   };
-
-  const validateFields = (fields: Field[]): boolean => {
+  // 모든 필드 유효성 검사 함수
+  const validateAllFields = (fields: Field[]): boolean => {
     for (const field of fields) {
-      if (
-        field.condition.trim() !== "" &&
-        !/^[0-9]+$/.test(field.condition.trim())
-      ) {
+      // 모든 필드 입력 필수
+      if (field.condition.trim() === "") {
+        toast({
+          title: "필드 오류",
+          description: "모든 필드를 작성해주세요.",
+          status: "error",
+          duration: 3000,
+          isClosable: false,
+        });
+        return false;
+      }
+      // 사은품 지금 조건 금액 숫자만 입력 가능
+      if (!/^[0-9]+$/.test(field.condition.trim())) {
         toast({
           title: "Validation Error",
           description: "사은품 지급조건금액은 숫자만 입력할 수 있습니다.",
@@ -890,12 +893,18 @@ const Gift = ({
         });
         return false;
       }
-
+      // 수량은 숫자만 입력 가능
       for (const gift of field.gifts) {
-        if (gift.giftQty == 0) {
+        if (
+          gift.giftName.trim() === "" ||
+          gift.giftSkuCode.trim() === "" ||
+          gift.giftQty === null ||
+          gift.giftQty < 1
+        ) {
           toast({
             title: "Validation Error",
-            description: "사은품 수량은 0개 이상 입력할 수 있습니다.",
+            description:
+              "모든 사은품 정보를 정확히 입력해주세요 (수량은 1개 이상 숫자만 입력 가능).",
             status: "error",
             duration: 3000,
             isClosable: true,
@@ -904,9 +913,18 @@ const Gift = ({
         }
       }
     }
+    // 모든 필드가 유효한 경우 로컬스토리지에 저장
+    toast({
+      title: "저장 완료",
+      description: "저장되었습니다.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+
     return true;
   };
-
+  // 필드 초기화 및 로컬 스토리지 필드 정보 제거
   const handleReset = () => {
     setFields([
       {
@@ -918,6 +936,7 @@ const Gift = ({
     localStorage.removeItem("fields");
   };
 
+  // 파일 저장 버튼 클릭 시 로컬스토리지에 있는 필드 정보를 파일로 저장
   const handleFileSave = useCallback(() => {
     //로컬스토리지에 있는 필드 정보 가져오기
     const storedFields = localStorage.getItem("fields");
@@ -934,7 +953,7 @@ const Gift = ({
       });
       return;
     }
-    //로컬스토리지에 필드 정보가 있다면 해당 데이터를 로컬스토리지 정보의 json string을 base64로 encode, 텍스트로 저장. 확장자는 .cnf 저장 후 다운로드
+    //로컬스토리지 문자열 => 바이트 배열로 변환 => base64로 인코딩
     const base64FieldsInfo = Buffer.from(storedFields, "utf-8").toString(
       "base64"
     );
@@ -947,7 +966,7 @@ const Gift = ({
     tempLink.click();
     URL.revokeObjectURL(tempLink.href);
   }, [toast]);
-
+  // 업로드한 파일 을 로드하는 함수
   const handleFileLoad = useCallback(() => {
     //파일 로드시 파일을 읽어서 base64로 인코딩된 파일을 가져옴
     //파일 불러오면 2번 역순으로 처리  1. 파일을 읽어서 2. base64로 인코딩된 파일을 가져옴
@@ -1001,7 +1020,7 @@ const Gift = ({
             isClosable: true,
           });
         }
-
+        // 파일 내 지급조건 존재 여부
         for (const field of jsonData) {
           if (!field.condition) {
             toast({
@@ -1042,13 +1061,14 @@ const Gift = ({
     fileInput.click();
   }, [setFields, toast]);
 
+  //사은품 지급 좋건 상품코드
   const codeSave = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setProductCode(e.target.value);
     },
     [setProductCode]
   );
-
+  // 묶음 체크박스 상태 저장
   const bundleChkSave = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setBundleChk(e.target.checked);
@@ -1056,6 +1076,7 @@ const Gift = ({
     [setBundleChk]
   );
 
+  // JSON 형식 판별 함수
   function isJSON(data: any) {
     try {
       // 데이터를 JSON으로 파싱 시도
@@ -1106,7 +1127,6 @@ const Gift = ({
               width: 100%;
               div {
                 width: 100%;
-                /* padding: 0.1em; */
               }
             }
           }
@@ -1149,14 +1169,6 @@ const Gift = ({
                 div {
                   width: 100%;
                 }
-                /* div > input {
-                  margin: 0 1em;
-                  width: 80%;
-                  text-align: center;
-                  cursor: text;
-                  border: 1px solid rgba(211, 211, 211, 1);
-                  height: 2.5em;
-                } */
               `}
             >
               <div>
@@ -1395,7 +1407,12 @@ const Gift = ({
                             <div>
                               <input
                                 type="number"
-                                value={gift.giftQty || ""}
+                                value={
+                                  gift.giftQty === null ||
+                                  gift.giftQty === undefined
+                                    ? ""
+                                    : gift.giftQty
+                                }
                                 placeholder="수량 입력(숫자)"
                                 onChange={(e) =>
                                   handleGiftChange(

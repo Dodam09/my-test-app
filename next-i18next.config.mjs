@@ -4,6 +4,7 @@ const nextI18NextConfig = {
     defaultLocale: "ko",
     locales: ["ko", "en"],
   },
+  defaultNS: "convert",
 };
 
 export default nextI18NextConfig;
