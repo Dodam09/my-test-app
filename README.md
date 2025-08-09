@@ -34,16 +34,17 @@ npm run dev
 ```json
 [
   {
-    "condition": 50000,
+    "condition": "50000",
     "gifts": [
       {
         "giftName": "에코백",
-        "giftSku": "SKU999",
+        "giftSkuCode": "SKU999",
         "giftQty": 2
       }
     ]
   }
 ]
+
 ```
 
 ## ✅ 유효성 검사 로직
